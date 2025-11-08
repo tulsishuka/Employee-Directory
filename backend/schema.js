@@ -1,3 +1,4 @@
+
 import { gql } from "graphql-tag";
 
 export const typeDefs = gql`
@@ -7,6 +8,7 @@ export const typeDefs = gql`
     position: String!
     department: String!
     salary: Float!
+    profileViewCount: Int
   }
 
   type Query {
@@ -16,7 +18,14 @@ export const typeDefs = gql`
   }
 
   type Mutation {
-    addEmployee(name: String!, position: String!, department: String!, salary: Float!): Employee
+    addEmployee(
+      name: String!
+      position: String!
+      department: String!
+      salary: Float!
+    ): Employee
+
+    incrementProfileView(id: ID!): Employee
   }
 `;
 
@@ -34,9 +43,24 @@ export const resolvers = {
   },
   Mutation: {
     addEmployee: async (_, { name, position, department, salary }, { db }) => {
-      const newEmployee = { id: Date.now().toString(), name, position, department, salary };
+      const newEmployee = {
+        id: Date.now().toString(),
+        name,
+        position,
+        department,
+        salary,
+        profileViewCount: 0,
+      };
       await db.collection("employees").insertOne(newEmployee);
       return newEmployee;
+    },
+    incrementProfileView: async (_, { id }, { db }) => {
+      const updatedEmployee = await db.collection("employees").findOneAndUpdate(
+        { id },
+        { $inc: { profileViewCount: 1 } },
+        { returnDocument: "after" }
+      );
+      return updatedEmployee.value;
     },
   },
 };

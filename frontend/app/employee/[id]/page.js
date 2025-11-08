@@ -1,9 +1,11 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 
 "use client";
+
+
 import { gql, useQuery } from "@apollo/client";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
+import client from "@/lib/apolloClient";
 
 
 const GET_EMPLOYEE = gql`
@@ -14,27 +16,27 @@ const GET_EMPLOYEE = gql`
       position
       department
       salary
+      profileViewCount
     }
   }
 `;
 
 export default function EmployeeDetail() {
   const { id } = useParams();
-    const router = useRouter();
-  console.log("Employee ID:", id);
+  const router = useRouter();
+
+  const { loading, error, data } = useQuery(GET_EMPLOYEE, {
+    variables: { id },
+    client,
+    fetchPolicy: "network-only",
+  });
 
   if (!id) return <p>No employee ID provided.</p>;
-
-  const { loading, error, data } = useQuery(GET_EMPLOYEE, { variables: { id } });
-
   if (loading) return <p>Loading...</p>;
-  if (error) {
-    console.error(error);
-    return <p>Error loading employee: {error.message}</p>;
-  }
+  if (error) return <p>Error: {error.message}</p>;
 
   const emp = data.getEmployeeDetails;
-  if (!emp) return <p>Employee not found.</p>;
+  if (!emp) return <p>Employee not found</p>;
 
   return (
     <div style={{ padding: "20px" }}>
@@ -42,13 +44,14 @@ export default function EmployeeDetail() {
       <p><strong>Position:</strong> {emp.position}</p>
       <p><strong>Department:</strong> {emp.department}</p>
       <p><strong>Salary:</strong> ${emp.salary}</p>
-            <button
+      <p><strong>Profile Views:</strong> {emp.profileViewCount || 0}</p>
+
+      <button
         style={{ marginTop: "20px", padding: "8px 16px", cursor: "pointer" }}
-        onClick={() => router.push("/")} // navigate to home page
+        onClick={() => router.push("/")}
       >
         Back to Home
       </button>
-
     </div>
   );
 }
